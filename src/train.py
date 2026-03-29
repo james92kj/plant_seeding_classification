@@ -67,7 +67,7 @@ def validate_one_epoch(model, loader, criterion, device):
 
 def run_fold(fold, train_paths, train_labels, val_paths, val_labels, cfg):
 
-
+    os.makedirs(cfg.model_dir, exist_ok=True)
     device = get_device()
     logger = setup_logging(cfg.log_dir, cfg.name)
 
@@ -84,7 +84,7 @@ def run_fold(fold, train_paths, train_labels, val_paths, val_labels, cfg):
     model.to(device)
 
     optimizer = AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=cfg.label_smoothing)
 
     scheduler = CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=cfg.T_0, T_mult=cfg.T_mult)
 
