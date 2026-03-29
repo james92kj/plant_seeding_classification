@@ -69,7 +69,11 @@ def run_fold(fold, train_paths, train_labels, val_paths, val_labels, cfg):
 
     os.makedirs(cfg.model_dir, exist_ok=True)
     device = get_device()
-    logger = setup_logging(cfg.log_dir, cfg.name)
+    logger = setup_logging(cfg.log_dir, f"{cfg.name}_fold{fold}")
+
+    logger.info(f"{'=' * 50}")
+    logger.info(f"FOLD {fold} — Training started")
+    logger.info(f"Train: {len(train_paths)} images | Val: {len(val_paths)} images")
 
     train_transform = get_train_transform(cfg.img_size, cfg.img_mean, cfg.img_std)
     val_transform = get_valid_transform(cfg.img_size, cfg.img_mean, cfg.img_std)
@@ -102,6 +106,8 @@ def run_fold(fold, train_paths, train_labels, val_paths, val_labels, cfg):
             save_checkpoint(model, optimizer, scheduler, epoch, valid_accuracy, fold, cfg, filepath)
 
         logger.info(f"Epoch {epoch} | Train loss {train_avg_loss:.4f} | valid loss {valid_avg_loss:.4f} | Valid accuracy {valid_accuracy:.4f}")
+
+    logger.info(f"FOLD {fold} — Best validation accuracy: {best_score:.4f}")
 
 
 
