@@ -15,6 +15,7 @@ class CFG:
     oof_dir: str = ""
     submission_dir: str = ""
     log_dir: str = ""
+    name: str = "plant_seedling"
     classes : List[str] = field(default_factory=lambda: ["Black-grass",
                                                          "Charlock",
                                                          "Cleavers",
@@ -30,8 +31,8 @@ class CFG:
     num_classes: int = 12
     img_size: int = 384
     in_channels: int = 3
-    img_mean: Tuple[int] = (0.485, 0.456, 0.406)
-    img_std: Tuple[int] = (0.229, 0.224, 0.225)
+    img_mean: Tuple[float] = (0.485, 0.456, 0.406)
+    img_std: Tuple[float] = (0.229, 0.224, 0.225)
 
     seed: int = 42
     n_folds: int = 5

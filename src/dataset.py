@@ -2,13 +2,9 @@
 
 from typing import List, Tuple, Optional, Dict
 
-from spacy.lang.ja.syntax_iterators import labels
 from torch.utils.data import Dataset
-
-import numpy as np
 import cv2
 import torch
-import os
 
 
 class PlantDataset(Dataset):
