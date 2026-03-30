@@ -5,7 +5,7 @@ def predict(model, loader, device):
     all_predictions = []
 
     with torch.no_grad():
-        for images in loader:
+        for images,_ in loader:
             images = images.to(device)
             predictions = model(images)
             _, predictions = torch.max(predictions, 1)

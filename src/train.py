@@ -11,7 +11,7 @@ from plant_seeding_classification.src.transforms import get_train_transform, get
 from plant_seeding_classification.src.utils import get_device, save_checkpoint, setup_logging
 
 
-def train_one_epoch(model, loader, optimizer, criterion, device, scheduler = None):
+def train_one_epoch(model, loader, optimizer, criterion, device, epoch, scheduler = None):
 
     model.train()
     total_loss, correct, total = 0.0, 0, 0
@@ -30,6 +30,9 @@ def train_one_epoch(model, loader, optimizer, criterion, device, scheduler = Non
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
+
+        if scheduler is not None:
+            scheduler.step(epoch + batch_idx / len(loader))
 
         _, predictions = torch.max(outputs, dim=1)
 
@@ -90,14 +93,12 @@ def run_fold(fold, train_paths, train_labels, val_paths, val_labels, cfg):
     optimizer = AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     criterion = nn.CrossEntropyLoss(label_smoothing=cfg.label_smoothing)
 
-    scheduler = CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=cfg.T_0, T_mult=cfg.T_mult)
+    scheduler = CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=cfg.T_0, T_mult=cfg.T_mult, eta_min=cfg.eta_min)
 
     best_score = 0
     for epoch in range(cfg.epochs):
-        train_avg_loss, train_accuracy = train_one_epoch(model, train_loader, optimizer, criterion, device , scheduler)
+        train_avg_loss, train_accuracy = train_one_epoch(model, train_loader, optimizer, criterion, device , epoch, scheduler)
         valid_avg_loss, valid_accuracy = validate_one_epoch(model, val_loader, criterion, device)
-
-        scheduler.step()
 
         if valid_accuracy > best_score:
             best_score = valid_accuracy
