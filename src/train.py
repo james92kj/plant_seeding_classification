@@ -5,10 +5,10 @@ import torch.nn as nn
 import torch
 import os
 
-from plant_seeding_classification.src.dataset import PlantDataset
-from plant_seeding_classification.src.model import PlantModel
-from plant_seeding_classification.src.transforms import get_train_transform, get_valid_transform
-from plant_seeding_classification.src.utils import get_device, save_checkpoint, setup_logging
+from src.dataset import PlantDataset
+from src.model import PlantModel
+from src.transforms import get_train_transform, get_valid_transform
+from src.utils import get_device, save_checkpoint, setup_logging
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device, epoch, scheduler = None):
