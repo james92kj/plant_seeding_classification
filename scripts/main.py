@@ -36,6 +36,7 @@ def prepare_data(cfg):
 def main():
     cfg = CFG()
     seed_everything(cfg.seed)
+    skip_training = True
 
     # create directories
     os.makedirs(cfg.model_dir, exist_ok=True)
@@ -48,14 +49,16 @@ def main():
     skfold = StratifiedKFold(n_splits=cfg.n_folds, shuffle=True, random_state=cfg.seed)
     np_img_paths, np_labels = np.array(image_paths), np.array(labels)
 
-    for fold, (train_idx, val_idx) in enumerate(skfold.split(np_img_paths, np_labels)):
-        train_paths = np_img_paths[train_idx]
-        train_labels = np_labels[train_idx]
+    if not skip_training:
 
-        valid_paths = np_img_paths[val_idx]
-        valid_labels = np_labels[val_idx]
+        for fold, (train_idx, val_idx) in enumerate(skfold.split(np_img_paths, np_labels)):
+            train_paths = np_img_paths[train_idx]
+            train_labels = np_labels[train_idx]
 
-        run_fold(fold, train_paths.tolist(), train_labels.tolist(), valid_paths.tolist(), valid_labels.tolist(), cfg)
+            valid_paths = np_img_paths[val_idx]
+            valid_labels = np_labels[val_idx]
+
+            run_fold(fold, train_paths.tolist(), train_labels.tolist(), valid_paths.tolist(), valid_labels.tolist(), cfg)
 
     # Run prediction
 
