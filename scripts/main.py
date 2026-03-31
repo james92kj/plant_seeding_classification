@@ -1,20 +1,21 @@
 import numpy as np
 from torch.utils.data import DataLoader
 
-from plant_seeding_classification.src.config import CFG
-from plant_seeding_classification.src.inference import predict
-from plant_seeding_classification.src.submission import create_submission
-from plant_seeding_classification.src.train import run_fold
-from plant_seeding_classification.src.utils import seed_everything
+from src.config import CFG
+from src.inference import predict_tta
+from src.submission import create_submission
+from src.train import run_fold
+from src.utils import seed_everything
 
-from plant_seeding_classification.src.dataset import PlantDataset
-from plant_seeding_classification.src.transforms import get_valid_transform
+from src.dataset import PlantDataset
+from src.transforms import get_valid_transform
 
-from plant_seeding_classification.src.model import PlantModel
-from plant_seeding_classification.src.utils import load_checkpoint, get_device
+from src.model import PlantModel
+from src.utils import load_checkpoint, get_device
 
 from sklearn.model_selection import StratifiedKFold
 import os
+
 
 def prepare_data(cfg):
     image_paths, labels = [], []
@@ -26,15 +27,13 @@ def prepare_data(cfg):
         cls_path = os.path.join(cfg.train_dir, cls_name)
         paths = os.listdir(cls_path)
         for path in paths:
-            image_paths.append(os.path.join(cls_path,path))
+            image_paths.append(os.path.join(cls_path, path))
             labels.append(cls_idx)
 
     return image_paths, labels, label_to_idx, idx_to_label
 
 
-
 def main():
-
     cfg = CFG()
     seed_everything(cfg.seed)
 
@@ -56,32 +55,37 @@ def main():
         valid_paths = np_img_paths[val_idx]
         valid_labels = np_labels[val_idx]
 
-        run_fold(fold, train_paths.tolist(), train_labels.tolist(), valid_paths.tolist(), valid_labels.tolist(),cfg)
+        run_fold(fold, train_paths.tolist(), train_labels.tolist(), valid_paths.tolist(), valid_labels.tolist(), cfg)
 
     # Run prediction
 
     test_paths = [os.path.join(cfg.test_dir, f) for f in os.listdir(cfg.test_dir) if not f.startswith(".")]
 
-
     device = get_device()
     # we are loading our weights
-    model = PlantModel(cfg.model_name,cfg.num_classes,pretrained=False)
-    model.to(device)
 
-    filepath = os.path.join(cfg.model_dir, 'fold_0_best.pth')
-    load_checkpoint(filepath,model,device=device)
-
+    predictions = []
 
     test_transform = get_valid_transform(cfg.img_size, cfg.img_mean, cfg.img_std)
-    test_dataset = PlantDataset(test_paths,transform=test_transform, labels= None)
-    test_loader = DataLoader(test_dataset,batch_size=cfg.batch_size,shuffle=False)
+    test_dataset = PlantDataset(test_paths, transform=test_transform, labels=None)
+    test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False)
 
-    predictions = predict(model, test_loader, device)
+    for i in range(5):
+        model = PlantModel(cfg.model_name, cfg.num_classes, pretrained=False)
+        model.to(device)
 
+        filepath = os.path.join(cfg.model_dir, f'fold_{i}_best.pth')
+        load_checkpoint(filepath, model, device=device)
+        predictions.append(predict_tta(model, test_loader, device))
+
+    predictions = np.array(predictions)
+    avg_predictions = np.average(predictions, axis=0)
+    final_predictions = np.argmax(avg_predictions, axis=1)
     # create submission
     output_path = os.path.join(cfg.submission_dir, 'submission.csv')
-    create_submission(test_paths, predictions, idx_to_label,output_path)
+    create_submission(test_paths, final_predictions, idx_to_label, output_path)
+
+
 
 if __name__ == '__main__':
     main()
-
